@@ -6,3 +6,49 @@
   ==================================================================
 -->
 
+## 10/22/2025 - The Five-Hour Pivot  
+
+# Hour 1: The RAG Rabbit Hole
+
+I started this afternoon with the pure intention of building a classic RAG system. The goal was simple: upload a PDF, chunk it, embed it with Gemini's text-embedding-004, store it in FAISS, and then connect it all to a PyQt interface. I spent the first hour diligently setting up the data processing pipeline. I got PyPDF2 to extract the raw text and implemented the RecursiveCharacterTextSplitter logic. I felt like a proper data engineer. The code was complex, but it was structurally sound. I was ready to hit the API and generate the first set of embeddings.
+# Hours 2 & 3: The Debugging Wall
+
+This is where sanity frayed. My first API call to the embedding endpoint kept throwing a TypeError. For two solid hours, I was locked in a battle with the Google GenAI SDK.
+
+    TypeError: Models.embed_content() got an unexpected keyword argument 'content'
+
+I checked the documentation, checked old tutorials, and stared at the traceback. I was convinced I had a dependency mismatch. I re-installed everything. Finally, out of desperation, I compared my code line-by-line with the latest official library examples. The realization hit me like a ton of bricks: The parameter name for the list of texts had changed from content (singular) to contents (plural).
+
+Two hours lost to a single, missing 's'. While I got the RAG pipeline working after that fix, the sheer complexity of managing all the RAG components (chunking strategy, vector store initialization) just for a simple chatbot felt overwhelming. There had to be an easier way.
+# Hour 4: The Great Pivot (Research & CLI Prototype)
+
+I took a 45-minute break from the code and deep-dived into the official Gemini documentation, specifically looking for how they recommend handling large documents. That's when I found the File API. It was my "Aha!" moment.
+
+The idea was revolutionary: why manually manage the complexity of RAG when I could just upload the entire file to Gemini and let the model handle the internal context management?
+
+I immediately dropped the FAISS/PyPDF2/Chunking setup and spent the next 15 minutes creating a barebones Command Line Interface (CLI) test:
+
+    Upload a test PDF: client.files.upload(file_path)
+
+    Ask a question: client.models.generate_content(contents=[file_ref, prompt])
+
+It worked instantly. The model understood the context of the entire PDF without any of my custom chunking. The RAG architecture, while powerful, was overkill for this project's scope. The pivot was complete.
+# Hour 5: The Basic, Functional GUI
+
+With the core logic simplified to just two clean API calls (upload and generate), the final hour was a rapid refactor of the PyQt interface.
+
+I replaced the complicated RAGSystem with the lean SimpleQASystem. I removed all the unnecessary imports (FAISS, PyPDF2, etc.) and connected the new File API logic to the existing QThread and signals. The result is basic: a button to upload, and a chat window to ask questions.
+
+Crucially, I ensured the cleanup_file() logic was tied to the application's exit signal. This is a critical feature of using the File API that can't be forgotten.
+
+It's simple, it's not a true deep-dive RAG, but it is fast, incredibly clean, and it fully meets the user requirement of "upload a PDF and ask questions from it." Five hours well spent—even if two of them were dedicated to finding a lowercase 's'.
+
+![image.png](https://blueprint.hackclub.com/user-attachments/blobs/proxy/eyJfcmFpbHMiOnsiZGF0YSI6NDI2MywicHVyIjoiYmxvYl9pZCJ9fQ==--cf58dc21de9be0dd3a9c044856b1ab57141a866a/image.png)
+
+![image.png](https://blueprint.hackclub.com/user-attachments/blobs/proxy/eyJfcmFpbHMiOnsiZGF0YSI6NDI2NCwicHVyIjoiYmxvYl9pZCJ9fQ==--2ec64bd326425bef87764d9e916e09a157208462/image.png)
+
+
+
+
+`Spoiler: The journal entry is made by one of my other highly experimental projects that can structure and write a nice journal, will be added soon :)`  
+
